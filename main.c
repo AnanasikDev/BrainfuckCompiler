@@ -98,33 +98,45 @@ void run(){
             case '[':
                 if (buf[pointer] == 0){
                     // exit loop
+                    int lbracecount = 0;
                     do{
                         srcindex++;
-
                         // stop program if index is wrong
                         if (!isSrcIndexValid(srcindex, src)){
                             printf("SRC INDEX IS INVALID at [, %d", srcindex);
                             return;
                         }
+
+                        if      (src[srcindex] == ']') lbracecount--;
+                        else if (src[srcindex] == '[') lbracecount++;
                     }
-                    while (src[srcindex] != ']');
+                    while (lbracecount != -1);
                 }
                 break;
             case ']':
                 if (buf[pointer] != 0){
                     // back to beginning of the loop
 
+                    int rbracecount = 0;
                     do{
                         srcindex--;
-
                         // stop program if index is wrong
                         if (!isSrcIndexValid(srcindex, src)){
-                            printf("SRC INDEX IS INVALID at ], %d", srcindex);
+                            printf("SRC INDEX IS INVALID at [, %d", srcindex);
                             return;
                         }
+
+                        if      (src[srcindex] == ']') rbracecount++;
+                        else if (src[srcindex] == '[') rbracecount--;
                     }
-                    while (src[srcindex] != '[');
+                    while (rbracecount != -1);
                 }
+                break;
+            case '"':
+                do{
+                    srcindex++;
+                }
+                while (isSrcIndexValid(srcindex, src) && src[srcindex] != '"');
                 break;
         }
 
@@ -155,15 +167,6 @@ int main(){
     
     run();
     safeExit();
-
-    // printf("\n");
-    // pointer = 0;
-
-    // do{
-    //     printf("%d, ", buf[pointer]);
-    //     pointer++;
-    // }
-    // while (pointer < BUFFER_SIZE);
 
     return 0;
 }
