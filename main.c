@@ -1,21 +1,28 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #define MAX_SRC_SIZE 1000
 #define BUFFER_SIZE 30000
-#define SHOW_SOURCE 1
+#define SHOW_SOURCE 0
 
 int ioshift = 0;
 
 FILE* srcfile;
 int buf[BUFFER_SIZE];
+char* src;
+
+void safeExit(){
+    fclose(srcfile);
+    free(src);
+}
 
 bool isSrcIndexValid(int index, const char* src){
-    return index < MAX_SRC_SIZE && src[index] != '\0';
+    return index < MAX_SRC_SIZE && src != NULL && src[index] != '\0';
 }
 
 bool isSrcValid(const char* src){
 
-    if (srcfile == NULL || !isSrcIndexValid(0, src)){
+    if (src == NULL || srcfile == NULL || !isSrcIndexValid(0, src)){
         printf("Error opening file\n");
         return 0;
     }
@@ -47,24 +54,23 @@ bool isSrcValid(const char* src){
     return 1;
 }
 
-int main(){
-    srcfile = fopen("src.bf", "r");
-    char src[MAX_SRC_SIZE];
-    fgets(src, MAX_SRC_SIZE, srcfile);
+void readallto(const char* filename, char** buffer){
+    srcfile = fopen(filename, "r");
+    fseek(srcfile, 0, SEEK_END);
+    long fsize = ftell(srcfile);
+    rewind(srcfile);
 
-    if (!isSrcValid(src))
-        return 5;
-    
-    if (SHOW_SOURCE){
-        printf(src);
-        printf("\n");
+    *buffer = (char*)malloc(fsize + 1);
+    if (*buffer  == NULL){
+        perror("Compilation failed: cannot open file");
+        fclose(srcfile);
+        return;
     }
+    fread(*buffer, 1, fsize, srcfile);
+    (*buffer)[fsize] = '\0';
+}
 
-    // define shift to ASCII printable characters starting from 0. 0 is Space.
-    if (src[0] == '~'){
-        ioshift = 32;
-    }
-    
+void run(){
     int srcindex = 0;
     int pointer = 0;
 
@@ -98,7 +104,7 @@ int main(){
                         // stop program if index is wrong
                         if (!isSrcIndexValid(srcindex, src)){
                             printf("SRC INDEX IS INVALID at [, %d", srcindex);
-                            return -1;
+                            return;
                         }
                     }
                     while (src[srcindex] != ']');
@@ -114,7 +120,7 @@ int main(){
                         // stop program if index is wrong
                         if (!isSrcIndexValid(srcindex, src)){
                             printf("SRC INDEX IS INVALID at ], %d", srcindex);
-                            return -1;
+                            return;
                         }
                     }
                     while (src[srcindex] != '[');
@@ -125,6 +131,30 @@ int main(){
         srcindex++;
     }
     while (isSrcIndexValid(srcindex, src));
+}
+
+int main(){
+    
+    readallto("src.bf", &src);
+
+    if (!isSrcValid(src))
+    {
+        safeExit();
+        return 5;
+    }
+    
+    if (SHOW_SOURCE){
+        printf(src);
+        printf("\n");
+    }
+
+    // define shift to ASCII printable characters starting from 0. 0 is Space.
+    if (src[0] == '~'){
+        ioshift = 32;
+    }
+    
+    run();
+    safeExit();
 
     // printf("\n");
     // pointer = 0;
