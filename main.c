@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#define MAX_SRC_SIZE 1000
+#define MAX_SRC_SIZE 10000
 #define BUFFER_SIZE 30000
-#define SHOW_SOURCE 0
 
 int ioshift = 0;
 
@@ -17,7 +16,7 @@ void safeExit(){
 }
 
 bool isSrcIndexValid(int index, const char* src){
-    return index < MAX_SRC_SIZE && src != NULL && src[index] != '\0';
+    return index >= 0 && index < MAX_SRC_SIZE && src != NULL && src[index] != '\0';
 }
 
 bool isSrcValid(const char* src){
@@ -46,7 +45,7 @@ bool isSrcValid(const char* src){
     while (isSrcIndexValid(index, src));
 
     if (braces != 0){
-        printf("Compilation failed: loops have incorrect hierarchy\n");
+        printf("Compilation failed: loops have incorrect hierarchy (braces=%d)\n", braces);
         return 0;
     }
 
@@ -66,8 +65,9 @@ void readallto(const char* filename, char** buffer){
         fclose(srcfile);
         return;
     }
-    fread(*buffer, 1, fsize, srcfile);
-    (*buffer)[fsize] = '\0';
+
+    const size_t read = fread(*buffer, 1, fsize, srcfile);
+    (*buffer)[read] = '\0'; // set end of the string at the last successfully read character
 }
 
 void run(){
@@ -148,20 +148,19 @@ void run(){
 int main(){
     
     readallto("src.bf", &src);
+    
 
     if (!isSrcValid(src))
     {
+        printf(src);
+        printf("\n");
+
         safeExit();
         return 5;
     }
-    
-    if (SHOW_SOURCE){
-        printf(src);
-        printf("\n");
-    }
 
-    // define shift to ASCII printable characters starting from 0. 0 is Space.
     if (src[0] == '~'){
+        // define shift to ASCII printable characters starting from 0. 0 is Space.
         ioshift = 32;
     }
     
